@@ -55,12 +55,11 @@ def post_song():
     #     return Response(error, 404, mimetype='application/json')
 
     # add song to db
-    song = models.Song(file=data["file"]["id"])
+    song = models.Song(file_id=data["file"]["id"])
     session.add(song)
     session.commit()
 
     # Return a 201 Created, containing the song as JSON and with the
     # location header set to the location of the song
     data = json.dumps(song.as_dictionary())
-    headers = {"Location": url_for("get_song", id=song.id)}
-    return Response(data, 201, headers=headers, mimetype="application/json")
+    return Response(data, 201, mimetype="application/json")

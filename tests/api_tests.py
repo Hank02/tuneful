@@ -99,7 +99,6 @@ class TestAPI(unittest.TestCase):
 
         self.assertEqual(response.status_code, 201)
         self.assertEqual(response.mimetype, "application/json")
-        self.assertEqual(urlparse(response.headers.get("Location")).path, "/api/songs/1")
 
         data = json.loads(response.data.decode("ascii"))
         self.assertEqual(data["id"], 1)
