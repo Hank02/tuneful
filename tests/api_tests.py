@@ -136,3 +136,71 @@ class TestAPI(unittest.TestCase):
         self.assertEqual(song['id'], song_B.id)
         self.assertEqual(song['file']['id'], song_B.file.id)
         self.assertEqual(song['file']['name'], song_B.file.name)
+
+    def test_edit_song(self):
+        # test editing a song in db
+
+        # populate db
+        file_A = models.File(name='file_A.mp3')
+        song_A = models.Song(file=file_A)
+        file_B = models.File(name='file_B.mp3')
+        song_B = models.Song(file=file_B)
+        session.add_all([file_A, file_B, song_A, song_B])
+        session.commit()
+
+        data = { "file": { "id": file_A.id } }
+
+        response = self.client.put(
+            "/api/songs/{}".format(song_A.id),
+            data=json.dumps(data),
+            content_type="application/json",
+            headers=[("Accept", "application/json")])
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.mimetype, "application/json")
+
+        data = json.loads(response.data.decode("ascii"))
+        self.assertEqual(data["id"], 1)
+        self.assertEqual(data["file"]["id"], 1)
+        self.assertEqual(data["file"]["name"], "file_A.mp3")
+
+        songs = session.query(models.Song).all()
+        self.assertEqual(len(songs), 2)
+
+        song = songs[0]
+        self.assertEqual(song.id, 1)
+        self.assertEqual(song.file.id, 1)
+        self.assertEqual(song.file.name, "file_A.mp3")
+
+    def test_delete_song(self):
+        # test deleting a song
+        
+        # populate db
+        file_A = models.File(name='file_A.mp3')
+        song_A = models.Song(file=file_A)
+        file_B = models.File(name='file_B.mp3')
+        song_B = models.Song(file=file_B)
+        session.add_all([file_A, file_B, song_A, song_B])
+        session.commit()
+
+        response = self.client.delete(
+            "/api/songs/{}".format(song_A.id),
+            content_type="application/json",
+            headers=[("Accept", "application/json")])
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.mimetype, "application/json")
+
+        data = json.loads(response.data.decode("ascii"))
+        self.assertEqual(data["id"], 1)
+        self.assertEqual(data["file"]["id"], 1)
+        self.assertEqual(data["file"]["name"], "file_A.mp3")
+
+        songs = session.query(models.Song).all()
+        self.assertEqual(len(songs), 1)
+
+        files = session.query(models.File).all()
+        self.assertEqual(len(files), 1)
+        file = files[0]
+        self.assertEqual(file.id, 2)
+        self.assertEqual(file.name, 'file_B.mp3')

@@ -38,9 +38,9 @@ def get_songs():
 @decorators.require("application/json")
 def post_song():
     # add song to db
-    data = request.json
 
     # Check that the JSON supplied is valid, if not you return a 422 Unprocessable Entity
+    data = request.json
     try:
         validate(data, song_schema)
     except ValidationError as error:
@@ -50,7 +50,6 @@ def post_song():
     # make sure song exists
     file_ = session.query(models.File).get(data['file']['id'])
     if not file_:
-        message = "Could not find file with id {}".format(data['file']['id'])
         error = json.dumps({'message': error.message})
         return Response(error, 404, mimetype='application/json')
 
@@ -79,7 +78,64 @@ def get_song(id):
         data = json.dumps({'message': message})
         return Response(data, 404, mimetype='application/json')
 
+@app.route('/api/songs/<int:id>', methods=['PUT'])
+@decorators.accept("application/json")
+@decorators.require("application/json")
+def edit_song(id):
+    # edit an existing song
+    
+    # get target song from db
+    song = session.query(models.Song).get(id)
 
+    # make sure song is in db
+    if not song:
+        message = "Could not find song with id {}".format(id)
+        data = json.dumps({'message': message})
+        return Response(data, 404, mimetype='application/json')
 
+    # Check that the JSON supplied is valid, if not you return a 422 Unprocessable Entity
+    data = request.json
+    try:
+        validate(data, song_schema)
+    except ValidationError as error:
+        error = json.dumps({"message": error.message})
+        return Response(error, 422, mimetype="application/json")
 
+    file = session.query(models.File).get(data['file']['id'])
+    if not file:
+        # message = "Could not find file with id {}".format(data['file']['id'])
+        error = json.dumps({'message': message})
+        return Response(error, 404, mimetype='application/json')
 
+    # add the song to db
+    song.file = file
+    session.add(song)
+    session.commit()
+
+    data = json.dumps(song.as_dictionary())
+    return Response(data, 200, mimetype="application/json")
+
+@app.route('/api/songs/<int:id>', methods=['DELETE'])
+@decorators.accept("application/json")
+@decorators.require("application/json")
+def delete_song(id):
+    # delete onse song at a time
+    
+    # get target song and file from db
+    song = session.query(models.Song).get(id)
+    file = session.query(models.File).get(id)
+
+    # make sure song is in db
+    if not song:
+        message = 'Could not find song with id {}'.format(id)
+        data = json.dumps({'message': message})
+        return Response(data, 404, mimetype='application/json')
+    
+    # delete song and file, commit to db
+    session.delete(song)
+    session.delete(file)
+    session.commit()
+
+    # return
+    data = json.dumps(song.as_dictionary())
+    return Response(data, 200, mimetype="application/json")
