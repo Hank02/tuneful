@@ -19,7 +19,9 @@ class Song(Base):
     file_id = Column(Integer, ForeignKey('files.id'))
      
     def as_dictionary(self):
-        song = { "id": self.id, "file": self.file.as_dictionary() }
+        song = { 
+            "id": self.id,
+            "file": self.file.as_dictionary() }
         return song
         
 
@@ -34,7 +36,9 @@ class File(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String(128))
 
-    
     def as_dictionary(self):
-        file = { "id": self.id, "name": self.name, "path": url_for("uploaded_file", filename=self.name) }
+        file = { 
+            "id": self.id, 
+            "name": self.name, 
+            "path": url_for("uploaded_file", filename=self.name) }
         return file

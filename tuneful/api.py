@@ -18,10 +18,6 @@ song_schema = {
     "required": ["file"]
 }
 
-@app.route("/uploads/<filename>", methods=["GET"])
-def uploaded_file(filename):
-    return send_from_directory(upload_path(), filename)
-
 @app.route('/api/songs', methods=['GET'])
 @decorators.accept("application/json")
 def get_songs():
@@ -139,3 +135,32 @@ def delete_song(id):
     # return
     data = json.dumps(song.as_dictionary())
     return Response(data, 200, mimetype="application/json")
+
+@app.route("/uploads/<filename>", methods=["GET"])
+def uploaded_file(filename):
+    return send_from_directory(upload_path(), filename)
+
+@app.route("/api/files", methods=["POST"])
+@decorators.require("multipart/form-data")
+@decorators.accept("application/json")
+def file_post():
+    # get file using Flask's request.files
+    file = request.files.get("file")
+    # if file is not found, return error message
+    if not file:
+        data = {"message": "Could not find file data"}
+        return Response(json.dumps(data), 422, mimetype="application/json")
+
+    # use Werkzeug's secure_filename to crate safe version of filename 
+    sec_filename = secure_filename(file.filename)
+    # use secure filname to create File object and add it to db
+    db_file = models.File(name=sec_filename)
+    session.add(db_file)
+    session.commit()
+    # save file to uplaod folder (upload_path is defined in utils.py)
+    file.save(upload_path(sec_filename))
+    
+    # return file info
+    data = db_file.as_dictionary()
+    return Response(json.dumps(data), 201, mimetype="application/json")
+
