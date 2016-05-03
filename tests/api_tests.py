@@ -112,3 +112,27 @@ class TestAPI(unittest.TestCase):
         self.assertEqual(song.id, 1)
         self.assertEqual(song.file.id, 1)
         self.assertEqual(song.file.name, "file_A.mp3")
+
+    def test_get_song(self):
+        # test for getting one song
+    
+        # populate db
+        file_A = models.File(name='file_A.mp3')
+        song_A = models.Song(file=file_A)
+        file_B = models.File(name='file_B.mp3')
+        song_B = models.Song(file=file_B)
+        session.add_all([file_A, file_B, song_A, song_B])
+        session.commit()
+
+        response = self.client.get(
+            '/api/songs/{}'.format(song_B.id),
+            headers=[("Accept", "application/json")])
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.mimetype, 'application/json')
+
+        song = json.loads(response.data.decode('ascii'))
+        
+        self.assertEqual(song['id'], song_B.id)
+        self.assertEqual(song['file']['id'], song_B.file.id)
+        self.assertEqual(song['file']['name'], song_B.file.name)
